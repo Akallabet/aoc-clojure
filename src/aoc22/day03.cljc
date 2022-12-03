@@ -2,32 +2,46 @@
   (:require #?(:clj [clojure.java.io :as io]
                :cljs [nbb.core :refer [slurp await]])
             [clojure.string :as str]
-            [clojure.set :as sets]
+            [clojure.set]
             #?(:cljs [promesa.core :as p])))
 
 (def letters "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
-(defn half [vector] (quot (count vector) 2))
-
 (defn split-half [vector]
-  [(take (half vector) vector)
-   (drop (half vector) vector)])
+  [(take (quot (count vector) 2) vector)
+   (drop (quot (count vector) 2) vector)])
 
-(defn common-letters [[v1 v2]] (sets/intersection v1 v2))
+(defn find-common-letters [list] (apply clojure.set/intersection (map set list)))
 
-(defn shared-items
-  [rucksacks]
-  (->> (str/split rucksacks #"\n")
-       (map #(split-half %))
+(defn group-by-same-letters [rucksacks]
+  (let [common-letters (find-common-letters rucksacks)
+        grouped (map #(group-by identity %) rucksacks)
+        merged (merge-with into (first grouped) (second grouped) (get grouped 2))
+        indexes (filter #(contains? common-letters (first %)) merged)]
+    indexes))
+
+(defn split-1 [rucksacks]
+  (->> (map split-half rucksacks)
        (map #(map set %))
-       (map vec)
-       (map common-letters)
-       (reduce concat)
+       (map find-common-letters)
+       (reduce concat)))
+
+(defn split-2 [rucksacks]
+  (->> (partition 3 rucksacks)
+       (map group-by-same-letters)
+       (map first)
+       (map first)))
+
+(defn reorganisation [rucksacks split-fn]
+  (->> (str/split-lines rucksacks)
+       (split-fn)
        (map #(+ (str/index-of letters %) 1))
        (apply +)))
 
 (def input "vJrwpWtwJgWrhcsFMMfFFhFp\njqHRNqRjqzjGDLGLrsFMfFZSrLrFZsSL\nPmmdzqPrVvPwwTWBwg\nwMqvLMZHhHMvwLHjbvcjnnSBnvTQFn\nttgJtRGJQctTZtZT\nCrZsJsPPZsGzwwsLwLmpwMDw")
 
 (comment
-  (shared-items input)
-  (shared-items (slurp (io/resource "aoc22/day03.txt"))))
+  (reorganisation input split-1)
+  (reorganisation (slurp (io/resource "aoc22/day03.txt")) split-1)
+  (reorganisation input split-2)
+  (reorganisation (slurp (io/resource "aoc22/day03.txt")) split-2))
