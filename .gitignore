@@ -6,5 +6,5 @@ node_modules
 *.mjs
 *_cherry.*
 .calva
-.clj-koondo
+.clj-kondo
 .lsp
