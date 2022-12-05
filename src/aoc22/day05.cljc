@@ -24,26 +24,27 @@
   (let [[stacks instructions] (str/split input #"\n\n")]
     {:stacks (vec (parse-lines stacks)) :instructions (parse-instructions instructions)}))
 
-(defn move [stacks instr] 
+(defn move [stacks instr mode] 
   (assoc 
    stacks 
    (:from instr) (vec (drop (:crates instr) (stacks (:from instr))))
-   (:to instr) (vec (concat (reverse (take (:crates instr) (stacks (:from instr)))) (stacks (:to instr))))))
+   (:to instr) (vec (concat (mode (take (:crates instr) (stacks (:from instr)))) (stacks (:to instr))))))
 
 (defn moves
-  [{stacks :stacks  instructions :instructions}]
-  (cond
-    (empty? instructions) (str/join "" (map first stacks))
-    :else (recur {:stacks (move stacks (first instructions)) :instructions (drop 1 instructions)})))
+  [mode]
+  (fn [{stacks :stacks  instructions :instructions}]
+    (cond
+      (empty? instructions) (str/join "" (map first stacks))
+      :else (recur {:stacks (move stacks (first instructions) mode) :instructions (drop 1 instructions)}))))
 
-;; stacks [[N Z] [D C M] [P]]
+(def moves-reverse (moves reverse))
+(def moves-normal (moves identity))
+
 (def example "N Z\nD C M\nP\n\nmove 1 from 2 to 1\nmove 3 from 1 to 3\nmove 2 from 2 to 1\nmove 1 from 1 to 2")
 
 (comment 
-  (move (:stacks (parse-input example)) {:crates 1 :from 1 :to 2})
-  (move (:stacks (parse-input example)) {:crates 2 :from 1 :to 2})
-  (move (:stacks (parse-input example)) {:crates 3 :from 1 :to 2})
-  (move (:stacks (parse-input example)) {:crates 1 :from 0 :to 1})
-  (moves (parse-input example))
-  (moves (parse-input (slurp (io/resource "aoc22/day05.txt"))))
+  (moves-reverse (parse-input example))
+  (moves-normal (parse-input example))
+  (moves-reverse (parse-input (slurp (io/resource "aoc22/day05.txt"))))
+  (moves-normal (parse-input (slurp (io/resource "aoc22/day05.txt"))))
          )
