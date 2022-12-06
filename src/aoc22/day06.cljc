@@ -10,7 +10,6 @@
     (= (count letters) (count (set letters)))))
 
 (defn find-marker [subroutine letters start]
-  (println "HEYYY" letters (subs subroutine start (+ start letters)))
   (cond
     (marker? (subs subroutine start (+ start letters))) (+ start letters)
     :else (recur subroutine letters (+ start 1))))
@@ -23,4 +22,7 @@
   (find-marker "nppdvjthqldpwncqszvftbrmjlhg" 4 0)
   (find-marker "nznrnfrfntjfmvfwmzdfjlvtqnbhcprsg" 4 0)
   (find-marker "zcfzfwzzqfrljwzlrfnpqdbhtmscgvjw" 4 0)
-  (find-marker (slurp (io/resource "aoc22/day06.txt")) 4 0))
+  (find-marker (slurp (io/resource "aoc22/day06.txt")) 4 0)
+  (find-marker "mjqjpqmgbljsphdztnvjfqwrcgsmlb" 14 0)
+  (find-marker "bvwbjplbgvbhsrlpgdmjqwftvncz" 14 0)
+  (find-marker (slurp (io/resource "aoc22/day06.txt")) 14 0))
