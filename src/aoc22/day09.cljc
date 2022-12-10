@@ -30,14 +30,38 @@
 
 (defn parse-input [lines]
   (->> (str/split-lines lines)
-       (map #(str/split % #" "))
-       (map #(map edn/read-string %))))
+       (mapv #(str/split % #" "))
+       (mapv (fn [[dir steps]] [dir (edn/read-string steps)]))))
 
+(defn gen-single-head-path
+  ([pos instruction] (gen-single-head-path pos instruction [pos]))
+  ([pos [dir steps] moves]
+   (let [[x y] (last moves)]
+     (cond
+       (= 0 steps) (drop 1 moves)
+       (= "R" dir) (recur pos [dir (decr steps)] (conj moves [(incr x) y]))
+       (= "L" dir) (recur pos [dir (decr steps)] (conj moves [(decr x) y]))
+       (= "U" dir) (recur pos [dir (decr steps)] (conj moves [x (incr y)]))
+       (= "D" dir) (recur pos [dir (decr steps)] (conj moves [x (decr y)]))))))
+
+(defn gen-head-path
+  ([instructions] (gen-head-path instructions [[0 0]]))
+  ([instructions path]
+   (let [head (last path)]
+     (cond
+       (= 0 (count instructions)) (drop 1 path)
+       :else (recur
+              (drop 1 instructions)
+              (concat path (gen-single-head-path head (first instructions))))))))
 
 (def input "R 4\nU 4\nL 3\nD 1\nR 4\nD 1\nL 5\nR 2")
 
 (comment
   (parse-input input)
+  (gen-single-head-path [0 0] ["R" 4])
+  (gen-single-head-path [0 0] ["L" 2])
+  (gen-head-path [["R" 4] ["L" 2]])
+  (gen-head-path (parse-input input))
   (= 3 (dist-line 1 -2))
   (= 2 (dist-rows [1 2] [-2 4]))
   (= 3 (dist-cols [1 2] [-2 4]))
