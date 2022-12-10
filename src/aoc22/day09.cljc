@@ -22,11 +22,16 @@
 
 (defn op [h t] (if (< h t) (decr t) (incr t)))
 
-(defn move [h t]
+(defn move-tail [h t]
   (cond
+    (= h t) t
+    (adj? h t) t
+    (and (same-row? h t) (= 1 (dist-cols h t))) t
+    (and (same-col? h t) (= 1 (dist-rows h t))) t
+    (and (= 1 (dist-cols h t)) (= 2 (dist-rows h t))) [(op (h 0) (t 0)) (op (h 1) (t 1))]
+    (and (= 1 (dist-rows h t)) (= 2 (dist-cols h t))) [(op (h 0) (t 0)) (op (h 1) (t 1))]
     (same-row? h t) [(op (h 0) (t 0)) (t 1)]
-    (same-col? h t) [(t 0) (op (h 1) (t 1))]
-    (and (= 1 (dist-cols h t)) (= 2 (dist-rows h t))) [(op (h 0) (t 0)) (op (h 1) (t 1))]))
+    (same-col? h t) [(t 0) (op (h 1) (t 1))]))
 
 (defn parse-input [lines]
   (->> (str/split-lines lines)
@@ -54,14 +59,35 @@
               (drop 1 instructions)
               (concat path (gen-single-head-path head (first instructions))))))))
 
+(defn gen-tail-path
+  ([head-path] (gen-tail-path head-path [[0 0]]))
+  ([head-path path]
+   (let [tail (last path)
+         head (first head-path)]
+     (cond
+       (= 0 (count head-path)) (drop 1 path)
+       :else (recur
+              (drop 1 head-path)
+              (conj path (move-tail head tail)))))))
+
+(defn follow-head [instructions]
+  (->> (gen-tail-path (gen-head-path instructions))
+      ;;  (mapv #(str/join "-" %))
+       set
+       count))
+
 (def input "R 4\nU 4\nL 3\nD 1\nR 4\nD 1\nL 5\nR 2")
 
 (comment
   (parse-input input)
   (gen-single-head-path [0 0] ["R" 4])
   (gen-single-head-path [0 0] ["L" 2])
-  (gen-head-path [["R" 4] ["L" 2]])
+  (gen-head-path [["R" 4] ["U" 4] ["L" 2]])
   (gen-head-path (parse-input input))
+  (follow-head (parse-input input))
+  (follow-head (parse-input (slurp (io/resource "aoc22/day09.txt"))))
+  (follow-head [["R" 4]])
+  (follow-head [["R" 4] ["U" 4] ["L" 3]])
   (= 3 (dist-line 1 -2))
   (= 2 (dist-rows [1 2] [-2 4]))
   (= 3 (dist-cols [1 2] [-2 4]))
@@ -79,16 +105,18 @@
   (= 4 (op 5 3))
   (= 0 (op -1 1))
   (= -4 (op -1 -5))
-  (= [2 2] (move [3 2] [1 2]))
-  (= [0 2] (move [-1 2] [1 2]))
-  (= [1 2] (move [1 3] [1 1]))
-  (= [1 -2] (move [1 -3] [1 -1]))
-  (= [2 1] (move [2 2] [1 0])) ;; diagonal up right
-  (= [2 1] (move [2 2] [3 0])) ;; diagonal up left
-  (= [2 3] (move [2 2] [3 4])) ;; diagonal down left
-  (= [2 -1] (move [2 -2] [1 0])) ;; diagonal down right
+  (move-tail [2 4] [4 3])
+  (= [3 2] (move-tail [3 2] [3 2]))
+  (= [2 2] (move-tail [3 2] [1 2]))
+  (= [0 2] (move-tail [-1 2] [1 2]))
+  (= [1 2] (move-tail [1 3] [1 1]))
+  (= [1 -2] (move-tail [1 -3] [1 -1]))
+  (= [2 1] (move-tail [2 2] [1 0])) ;; diagonal up right
+  (= [2 1] (move-tail [2 2] [3 0])) ;; diagonal up left
+  (= [2 3] (move-tail [2 2] [3 4])) ;; diagonal down left
+  (= [2 -1] (move-tail [2 -2] [1 0])) ;; diagonal down right
   (adj? [2 1] [1 0])
   (adj? [0 -1] [1 0])
-  ;; (= [0 0] (move [1 1] [0 0]))
-  ;; (= [-2 -1] (move [-3 -2] [-2 -1]))
+  ;; (= [0 0] (move-tail [1 1] [0 0]))
+  ;; (= [-2 -1] (move-tail [-3 -2] [-2 -1]))
   )
